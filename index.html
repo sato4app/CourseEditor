@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ハイキングコースエディタ</title>
+    <link rel="icon"
+        href="data:image/svg+xml,
+            <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥾</text></svg>" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <div class="control-panel">
+        <div class="control-section">
+            <label>
+                <input type="radio" name="mode" value="fileio" checked>
+                <span class="selected">ファイルの入出力</span>
+            </label>
+            <label>
+                <input type="radio" name="mode" value="course">
+                <span>コースの作成・編集</span>
+            </label>
+            <label>
+                <input type="radio" name="mode" value="photo">
+                <span>コース用写真の選択</span>
+            </label>
+        </div>
+
+        <!-- ファイルの入出力パネル -->
+        <div id="fileIoPanel">
+            <div class="io-controls">
+                <div class="io-row">
+                    <label for="excelInput" class="file-input-label">ポイントGPS(Excel)の読み込み</label>
+                    <input type="file" id="excelInput" accept=".xlsx, .xls" />
+                </div>
+                <div class="io-row">
+                    <label for="geojsonInput" class="file-input-label">ルート(GeoJSON)ファイルの読み込み</label>
+                    <input type="file" id="geojsonInput" accept=".geojson, .json" multiple />
+                </div>
+                <div class="io-row">
+                    <button id="exportBtn">ハイキングコースのファイル出力</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- コースの作成・編集パネル -->
+        <div id="coursePanel" style="display: none;">
+            <div class="placeholder-panel">
+                <p>コースの作成・編集</p>
+                <p class="placeholder-note">（仕様検討中）</p>
+            </div>
+        </div>
+
+        <!-- コース用写真の選択パネル -->
+        <div id="photoPanel" style="display: none;">
+            <div class="placeholder-panel">
+                <p>コース用写真の選択</p>
+                <p class="placeholder-note">（仕様検討中）</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script type="module" src="js/app.js"></script>
+</body>
+
+</html>
