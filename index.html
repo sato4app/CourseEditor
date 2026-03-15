@@ -40,7 +40,7 @@
                 </div>
                 <div class="io-row">
                     <label for="geojsonInput" class="file-input-label">ルート(GeoJSON)ファイルの読み込み</label>
-                    <input type="file" id="geojsonInput" accept=".geojson, .json" multiple />
+                    <input type="file" id="geojsonInput" accept=".geojson" multiple />
                 </div>
                 <div class="io-row">
                     <button id="exportBtn">ハイキングコースのファイル出力</button>
@@ -61,6 +61,38 @@
             <div class="placeholder-panel">
                 <p>コース用写真の選択</p>
                 <p class="placeholder-note">（仕様検討中）</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- GeoJSON読み込み種別選択モーダル -->
+    <div id="geojsonImportModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-title">読み込む種別を選択</div>
+            <div class="modal-row">
+                <label class="modal-check-label">
+                    <input type="checkbox" id="importPoint">
+                    <span>ポイント</span>
+                </label>
+                <span id="importPointCount" class="modal-count">0点</span>
+            </div>
+            <div class="modal-row">
+                <label class="modal-check-label">
+                    <input type="checkbox" id="importRoute" checked>
+                    <span>ルート</span>
+                </label>
+                <span id="importRouteCount" class="modal-count">0本</span>
+            </div>
+            <div class="modal-row">
+                <label class="modal-check-label">
+                    <input type="checkbox" id="importSpot" checked>
+                    <span>スポット</span>
+                </label>
+                <span id="importSpotCount" class="modal-count">0個</span>
+            </div>
+            <div class="modal-actions">
+                <button id="importConfirmBtn" class="modal-btn modal-btn-primary">読み込む</button>
+                <button id="importCancelBtn" class="modal-btn">キャンセル</button>
             </div>
         </div>
     </div>
