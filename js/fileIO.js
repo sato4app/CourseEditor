@@ -4,43 +4,46 @@ import { DEFAULTS } from './constants.js';
 import { showMessage } from './message.js';
 import { loadExcelFile } from './excelLoader.js';
 
+// ========================================
+// ポイント・スポットのストア（ルート端点検索用）
+// ========================================
+// ポイントGPS (Excel): pointId -> {lat, lng}
+const gpsPointStore = new Map();
+// GeoJSONポイント (type=point): pointId -> {lat, lng}
+const geojsonPointStore = new Map();
+// スポット: [{name, lat, lng}]
+const spotStore = [];
+
 /**
- * ポイントGPS(Excel)の読み込みを設定
+ * ルート端点の座標を検索する
+ * 優先順位: ポイントGPS > GeoJSONポイント > スポット(名称一致、複数なら最近傍)
+ * @param {string} id - 検索するID/名称
+ * @param {number} refLat - 最近傍判定の基準緯度（スポット検索時）
+ * @param {number} refLng - 最近傍判定の基準経度（スポット検索時）
+ * @returns {{lat, lng}|null}
  */
-export function setupExcelInput(dataLayer) {
-    document.getElementById('excelInput').addEventListener('change', async function (e) {
-        const file = e.target.files[0];
-        if (!file) return;
+function findEndpoint(id, refLat, refLng) {
+    if (gpsPointStore.has(id)) return gpsPointStore.get(id);
+    if (geojsonPointStore.has(id)) return geojsonPointStore.get(id);
 
-        try {
-            const points = await loadExcelFile(file);
+    // スポットを名称で検索
+    const matches = spotStore.filter(s => s.name === id);
+    if (matches.length === 0) return null;
+    if (matches.length === 1) return matches[0];
 
-            if (!points || points.length === 0) {
-                showMessage('有効なポイントデータが見つかりませんでした', 'warning');
-                return;
-            }
-
-            points.forEach(p => {
-                const marker = L.circleMarker([p.lat, p.lng], DEFAULTS.GPS_POINT_STYLE);
-                marker.bindPopup(`${p.pointId}<br>${p.name}<br>PointGPS`);
-                dataLayer.addLayer(marker);
-            });
-
-            showMessage(`${points.length}件のポイントGPSを読み込みました`);
-        } catch (error) {
-            showMessage(`読み込みエラー: ${error.message}`, 'error');
-        } finally {
-            this.value = '';
-        }
-    });
+    // 複数一致 → 基準点に最も近いものを返す
+    let nearest = null;
+    let minDist = Infinity;
+    for (const s of matches) {
+        const d = Math.pow(s.lat - refLat, 2) + Math.pow(s.lng - refLng, 2);
+        if (d < minDist) { minDist = d; nearest = s; }
+    }
+    return nearest;
 }
 
-/**
- * フィーチャーの種別を判定する
- * ポイント: type='point' または type='ポイントGPS' のPoint
- * ルート: LineString
- * スポット: type='spot' のPoint
- */
+// ========================================
+// フィーチャー種別判定
+// ========================================
 function classifyFeature(f) {
     if (!f.geometry) return null;
     const geomType = f.geometry.type;
@@ -54,9 +57,9 @@ function classifyFeature(f) {
     return null;
 }
 
-/**
- * 読み込み種別選択モーダルを表示し、選択結果をPromiseで返す
- */
+// ========================================
+// 読み込み種別選択モーダル
+// ========================================
 function showImportModal(features) {
     return new Promise((resolve) => {
         const counts = { point: 0, route: 0, spot: 0 };
@@ -96,19 +99,51 @@ function showImportModal(features) {
             resolve(selection);
         };
 
-        const onCancel = () => {
-            cleanup();
-            resolve(null);
-        };
+        const onCancel = () => { cleanup(); resolve(null); };
 
         confirmBtn.addEventListener('click', onConfirm);
         cancelBtn.addEventListener('click', onCancel);
     });
 }
 
-/**
- * ルート(GeoJSON)ファイルの読み込みを設定
- */
+// ========================================
+// ポイントGPS(Excel)の読み込み
+// ========================================
+export function setupExcelInput(dataLayer) {
+    document.getElementById('excelInput').addEventListener('change', async function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const points = await loadExcelFile(file);
+
+            if (!points || points.length === 0) {
+                showMessage('有効なポイントデータが見つかりませんでした', 'warning');
+                return;
+            }
+
+            points.forEach(p => {
+                // ストアに登録（ルート端点検索用）
+                gpsPointStore.set(String(p.pointId), { lat: p.lat, lng: p.lng });
+
+                // 地図に表示
+                const marker = L.circleMarker([p.lat, p.lng], DEFAULTS.GPS_POINT_STYLE);
+                marker.bindPopup(`${p.pointId}<br>${p.name}<br>PointGPS`);
+                dataLayer.addLayer(marker);
+            });
+
+            showMessage(`${points.length}件のポイントGPSを読み込みました`);
+        } catch (error) {
+            showMessage(`読み込みエラー: ${error.message}`, 'error');
+        } finally {
+            this.value = '';
+        }
+    });
+}
+
+// ========================================
+// ルート(GeoJSON)ファイルの読み込み
+// ========================================
 export function setupGeoJsonInput(dataLayer) {
     document.getElementById('geojsonInput').addEventListener('change', async function (e) {
         const files = Array.from(e.target.files);
@@ -136,7 +171,26 @@ export function setupGeoJsonInput(dataLayer) {
         const selection = await showImportModal(allFeatures);
         if (!selection) { this.value = ''; return; }
 
-        // 選択に応じてフィーチャーをフィルタリングして表示
+        // ─── 第1パス: ポイント・スポットをストアに登録 ───
+        // 選択状態に関わらず全ポイント/スポットを登録（ルート端点検索に使用）
+        allFeatures.forEach(f => {
+            const cls = classifyFeature(f);
+            const props = f.properties || {};
+
+            if (cls === 'point') {
+                const [lng, lat] = f.geometry.coordinates;
+                const id = String(props.id || props.pointId || '');
+                if (id && !gpsPointStore.has(id)) {
+                    geojsonPointStore.set(id, { lat, lng });
+                }
+            } else if (cls === 'spot') {
+                const [lng, lat] = f.geometry.coordinates;
+                const name = props.name || '';
+                if (name) spotStore.push({ name, lat, lng });
+            }
+        });
+
+        // ─── 第2パス: 選択された種別を地図に表示 ───
         let count = 0;
         allFeatures.forEach(f => {
             const cls = classifyFeature(f);
@@ -147,11 +201,28 @@ export function setupGeoJsonInput(dataLayer) {
             const name = props.name || '';
 
             if (cls === 'route') {
-                // ルート: ポップアップ表示なし
-                const latLngs = f.geometry.coordinates.map(c => [c[1], c[0]]);
-                const line = L.polyline(latLngs, DEFAULTS.ROUTE_STYLE);
-                dataLayer.addLayer(line);
+                const waypointCoords = f.geometry.coordinates.map(c => [c[1], c[0]]);
+
+                // startPoint / endPoint プロパティから開始・終了ポイントIDを取得
+                const startId = props.startPoint != null ? String(props.startPoint) : null;
+                const endId   = props.endPoint   != null ? String(props.endPoint)   : null;
+
+                // 基準点: 中間点の先頭・末尾（最近傍スポット判定用）
+                const refFirst = waypointCoords.length > 0 ? waypointCoords[0] : [0, 0];
+                const refLast  = waypointCoords.length > 0 ? waypointCoords[waypointCoords.length - 1] : [0, 0];
+
+                const startCoord = startId ? findEndpoint(startId, refFirst[0], refFirst[1]) : null;
+                const endCoord   = endId   ? findEndpoint(endId,   refLast[0],  refLast[1])  : null;
+
+                const fullCoords = [
+                    ...(startCoord ? [[startCoord.lat, startCoord.lng]] : []),
+                    ...waypointCoords,
+                    ...(endCoord   ? [[endCoord.lat,   endCoord.lng]]   : [])
+                ];
+
+                L.polyline(fullCoords, DEFAULTS.ROUTE_STYLE).addTo(dataLayer);
                 count++;
+
             } else if (cls === 'point') {
                 // ポイント: 赤の円形、ポイントID + "Point"
                 const [lng, lat] = f.geometry.coordinates;
@@ -160,6 +231,7 @@ export function setupGeoJsonInput(dataLayer) {
                 marker.bindPopup(`${pointId}<br>Point`);
                 dataLayer.addLayer(marker);
                 count++;
+
             } else if (cls === 'spot') {
                 // スポット: 青の正方形、スポット名 + "Spot"
                 const [lng, lat] = f.geometry.coordinates;
@@ -182,9 +254,9 @@ export function setupGeoJsonInput(dataLayer) {
     });
 }
 
-/**
- * ハイキングコースのファイル出力ボタンを設定（仕様未定）
- */
+// ========================================
+// ハイキングコースのファイル出力（仕様未定）
+// ========================================
 export function setupExportButton() {
     document.getElementById('exportBtn').addEventListener('click', function () {
         showMessage('ハイキングコースのファイル出力は準備中です', 'warning');
