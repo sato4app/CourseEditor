@@ -22,8 +22,7 @@ export function setupExcelInput(dataLayer) {
 
             points.forEach(p => {
                 const marker = L.circleMarker([p.lat, p.lng], DEFAULTS.GPS_POINT_STYLE);
-                const popup = `${p.pointId}<br>${p.name}`;
-                marker.bindPopup(popup);
+                marker.bindPopup(`${p.pointId}<br>${p.name}<br>PointGPS`);
                 dataLayer.addLayer(marker);
             });
 
@@ -148,21 +147,30 @@ export function setupGeoJsonInput(dataLayer) {
             const name = props.name || '';
 
             if (cls === 'route') {
+                // ルート: ポップアップ表示なし
                 const latLngs = f.geometry.coordinates.map(c => [c[1], c[0]]);
                 const line = L.polyline(latLngs, DEFAULTS.ROUTE_STYLE);
-                if (name) line.bindPopup(name);
                 dataLayer.addLayer(line);
                 count++;
             } else if (cls === 'point') {
+                // ポイント: 赤の円形、ポイントID + "Point"
                 const [lng, lat] = f.geometry.coordinates;
-                const marker = L.circleMarker([lat, lng], DEFAULTS.GPS_POINT_STYLE);
-                if (name) marker.bindPopup(name);
+                const pointId = props.id || props.pointId || '';
+                const marker = L.circleMarker([lat, lng], DEFAULTS.POINT_STYLE);
+                marker.bindPopup(`${pointId}<br>Point`);
                 dataLayer.addLayer(marker);
                 count++;
             } else if (cls === 'spot') {
+                // スポット: 青の正方形、スポット名 + "Spot"
                 const [lng, lat] = f.geometry.coordinates;
-                const marker = L.circleMarker([lat, lng], { ...DEFAULTS.GPS_POINT_STYLE, fillColor: '#0000ff', color: '#0000ff' });
-                if (name) marker.bindPopup(name);
+                const icon = L.divIcon({
+                    className: '',
+                    html: '<div style="width:12px;height:12px;background:#0000ff;border:1px solid white;box-shadow:0 0 2px rgba(0,0,0,0.5);"></div>',
+                    iconSize: [12, 12],
+                    iconAnchor: [6, 6]
+                });
+                const marker = L.marker([lat, lng], { icon });
+                marker.bindPopup(`${name}<br>Spot`);
                 dataLayer.addLayer(marker);
                 count++;
             }

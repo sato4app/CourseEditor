@@ -13,11 +13,22 @@ export const DEFAULTS = {
     // Excel読み込み制限
     MAX_EXCEL_ROWS: 1000,
 
-    // マーカースタイル
+    // ポイントGPS (Excel): 緑の円形
     GPS_POINT_STYLE: {
         radius: 6,
         fillColor: '#008000',
         color: '#008000',
+        weight: 0,
+        stroke: false,
+        opacity: 1,
+        fillOpacity: 1
+    },
+
+    // ポイント (GeoJSON): 赤の円形
+    POINT_STYLE: {
+        radius: 6,
+        fillColor: '#ff0000',
+        color: '#ff0000',
         weight: 0,
         stroke: false,
         opacity: 1,
