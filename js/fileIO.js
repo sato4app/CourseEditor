@@ -128,7 +128,7 @@ export function setupExcelInput(dataLayer) {
 
                 // 地図に表示
                 const marker = L.circleMarker([p.lat, p.lng], DEFAULTS.GPS_POINT_STYLE);
-                marker.bindPopup(`${p.pointId}<br>${p.name}<br>PointGPS`);
+                marker.bindPopup(`${p.pointId}<br>${p.name}<br>(PointGPS)`);
                 dataLayer.addLayer(marker);
             });
 
@@ -228,7 +228,7 @@ export function setupGeoJsonInput(dataLayer) {
                 const [lng, lat] = f.geometry.coordinates;
                 const pointId = props.id || props.pointId || '';
                 const marker = L.circleMarker([lat, lng], DEFAULTS.POINT_STYLE);
-                marker.bindPopup(`${pointId}<br>Point`);
+                marker.bindPopup(`${pointId}<br>(Point)`);
                 dataLayer.addLayer(marker);
                 count++;
 
@@ -242,7 +242,7 @@ export function setupGeoJsonInput(dataLayer) {
                     iconAnchor: [5, 5]
                 });
                 const marker = L.marker([lat, lng], { icon });
-                marker.bindPopup(`${name}<br>Spot`);
+                marker.bindPopup(`${name}<br>(Spot)`);
                 dataLayer.addLayer(marker);
                 count++;
             }
