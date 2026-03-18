@@ -3,6 +3,7 @@
 import { MODES } from './constants.js';
 import { initializeMap } from './mapCore.js';
 import { setupExcelInput, setupGeoJsonInput, setupExportButton } from './fileIO.js';
+import { setupCourseEditor } from './courseEditor.js';
 
 // 地図とレイヤーの初期化
 const { map, dataLayer } = initializeMap();
@@ -11,6 +12,9 @@ const { map, dataLayer } = initializeMap();
 setupExcelInput(dataLayer);
 setupGeoJsonInput(dataLayer);
 setupExportButton();
+
+// コースエディタの設定
+setupCourseEditor();
 
 // モード切り替え処理
 document.querySelectorAll('input[name="mode"]').forEach(radio => {
