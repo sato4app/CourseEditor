@@ -3,6 +3,7 @@
 import { DEFAULTS } from './constants.js';
 import { showMessage } from './message.js';
 import { loadExcelFile } from './excelLoader.js';
+import { isEditingMode } from './courseEditor.js';
 
 // ========================================
 // ポイント・スポットのストア（ルート端点検索用）
@@ -131,11 +132,22 @@ export function setupExcelInput(dataLayer) {
 
                 // 地図に表示
                 const marker = L.circleMarker([p.lat, p.lng], DEFAULTS.GPS_POINT_STYLE);
-                marker.bindPopup(`${pid}<br>${pname}<br>(PointGPS)`);
-                marker.on('click', () => {
-                    document.dispatchEvent(new CustomEvent('gpsPointClicked', {
-                        detail: { pointId: pid, name: pname }
-                    }));
+                marker.bindPopup(() => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `${pid}<br>${pname}<br>(PointGPS)`;
+                    if (isEditingMode()) {
+                        const btn = document.createElement('button');
+                        btn.textContent = 'コースに追加';
+                        btn.style.cssText = 'margin-top:4px; width:100%;';
+                        btn.addEventListener('click', () => {
+                            document.dispatchEvent(new CustomEvent('gpsPointClicked',
+                                { detail: { pointId: pid, name: pname } }));
+                            marker.closePopup();
+                        });
+                        div.appendChild(document.createElement('br'));
+                        div.appendChild(btn);
+                    }
+                    return div;
                 });
                 dataLayer.addLayer(marker);
             });

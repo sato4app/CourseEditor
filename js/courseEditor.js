@@ -1,5 +1,7 @@
 // コースの作成・編集
 
+export function isEditingMode() { return editingMode; }
+
 // courses[i] = { id, name, points: [{ pointId, name }], fixed: bool }
 const courses = [];
 let currentIndex = -1;
