@@ -123,12 +123,20 @@ export function setupExcelInput(dataLayer) {
             }
 
             points.forEach(p => {
+                const pid = String(p.pointId);
+                const pname = p.name || '';
+
                 // ストアに登録（ルート端点検索用）
-                gpsPointStore.set(String(p.pointId), { lat: p.lat, lng: p.lng });
+                gpsPointStore.set(pid, { lat: p.lat, lng: p.lng });
 
                 // 地図に表示
                 const marker = L.circleMarker([p.lat, p.lng], DEFAULTS.GPS_POINT_STYLE);
-                marker.bindPopup(`${p.pointId}<br>${p.name}<br>(PointGPS)`);
+                marker.bindPopup(`${pid}<br>${pname}<br>(PointGPS)`);
+                marker.on('click', () => {
+                    document.dispatchEvent(new CustomEvent('gpsPointClicked', {
+                        detail: { pointId: pid, name: pname }
+                    }));
+                });
                 dataLayer.addLayer(marker);
             });
 

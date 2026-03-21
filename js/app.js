@@ -14,7 +14,7 @@ setupGeoJsonInput(dataLayer);
 setupExportButton();
 
 // コースエディタの設定
-setupCourseEditor();
+setupCourseEditor(map);
 
 // モード切り替え処理
 document.querySelectorAll('input[name="mode"]').forEach(radio => {
