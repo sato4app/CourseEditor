@@ -138,9 +138,9 @@ function updateEditButtons() {
 // ポイントリスト描画
 // ========================================
 function getNoLabel(index, total, fixed) {
-    if (index === 0) return '開始ポイント';
-    if (fixed && index === total - 1) return '終了ポイント';
-    return `中間ポイント${index}`;
+    if (index === 0) return '開始';
+    if (fixed && index === total - 1) return '終了';
+    return `中間${index}`;
 }
 
 function renderPointList() {
