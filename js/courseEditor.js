@@ -7,6 +7,7 @@ const courses = [];
 let currentIndex = -1;
 let nextId = 1;
 let editingMode = false;
+let nameAreaMode = null; // 'new' | 'rename' | null
 let _map = null;
 
 // ========================================
@@ -15,58 +16,89 @@ let _map = null;
 export function setupCourseEditor(map) {
     _map = map;
 
-    document.getElementById('courseAddBtn').addEventListener('click', addCourse);
+    document.getElementById('courseNewBtn').addEventListener('click', openNewMode);
+    document.getElementById('courseRenameBtn').addEventListener('click', openRenameMode);
     document.getElementById('courseDeleteBtn').addEventListener('click', deleteCourse);
     document.getElementById('courseSelect').addEventListener('change', onSelectChange);
-    document.getElementById('courseName').addEventListener('input', onNameInput);
+    document.getElementById('courseConfirmBtn').addEventListener('click', confirmName);
+    document.getElementById('courseCancelBtn').addEventListener('click', closeNameArea);
+    document.getElementById('courseName').addEventListener('keydown', e => {
+        if (e.key === 'Enter') confirmName();
+        if (e.key === 'Escape') closeNameArea();
+    });
     document.getElementById('editStartBtn').addEventListener('click', startEditing);
     document.getElementById('fixBtn').addEventListener('click', fixCourse);
 
-    // GPSマーカークリックイベントをリッスン
     document.addEventListener('gpsPointClicked', onGpsPointClicked);
 
     renderSelect();
-    updateEditButtons();
+    updateButtons();
+}
+
+// ========================================
+// 名称入力エリア
+// ========================================
+function openNewMode() {
+    nameAreaMode = 'new';
+    document.getElementById('courseName').value = '';
+    document.getElementById('courseNameArea').style.display = 'block';
+    document.getElementById('courseName').focus();
+}
+
+function openRenameMode() {
+    if (currentIndex < 0) return;
+    nameAreaMode = 'rename';
+    document.getElementById('courseName').value = courses[currentIndex].name;
+    document.getElementById('courseNameArea').style.display = 'block';
+    document.getElementById('courseName').focus();
+}
+
+function closeNameArea() {
+    nameAreaMode = null;
+    document.getElementById('courseNameArea').style.display = 'none';
+    document.getElementById('courseName').value = '';
+}
+
+function confirmName() {
+    const name = document.getElementById('courseName').value.trim();
+    if (!name) return;
+
+    if (nameAreaMode === 'new') {
+        courses.push({ id: nextId++, name, points: [], fixed: false });
+        currentIndex = courses.length - 1;
+        renderSelect();
+        renderPointList();
+    } else if (nameAreaMode === 'rename' && currentIndex >= 0) {
+        courses[currentIndex].name = name;
+        const opt = document.getElementById('courseSelect').options[currentIndex];
+        if (opt) opt.textContent = name;
+    }
+
+    closeNameArea();
+    updateButtons();
 }
 
 // ========================================
 // コース操作
 // ========================================
-function addCourse() {
-    const name = document.getElementById('courseName').value.trim();
-    if (!name) return;
-    courses.push({ id: nextId++, name, points: [], fixed: false });
-    currentIndex = courses.length - 1;
-    renderSelect();
-    renderPointList();
-    updateEditButtons();
-}
-
 function deleteCourse() {
     if (currentIndex < 0 || currentIndex >= courses.length) return;
     if (editingMode) exitEditingMode();
+    closeNameArea();
     courses.splice(currentIndex, 1);
     currentIndex = courses.length > 0 ? Math.min(currentIndex, courses.length - 1) : -1;
     renderSelect();
     renderPointList();
-    updateEditButtons();
+    updateButtons();
 }
 
 function onSelectChange() {
     if (editingMode) exitEditingMode();
+    closeNameArea();
     const val = parseInt(document.getElementById('courseSelect').value, 10);
     currentIndex = isNaN(val) ? -1 : val;
-    document.getElementById('courseName').value =
-        currentIndex >= 0 ? courses[currentIndex].name : '';
     renderPointList();
-    updateEditButtons();
-}
-
-function onNameInput() {
-    if (currentIndex < 0 || currentIndex >= courses.length) return;
-    courses[currentIndex].name = document.getElementById('courseName').value;
-    const opt = document.getElementById('courseSelect').options[currentIndex];
-    if (opt) opt.textContent = courses[currentIndex].name;
+    updateButtons();
 }
 
 // ========================================
@@ -81,7 +113,6 @@ function renderSelect() {
         opt.textContent = '（コースなし）';
         sel.appendChild(opt);
         currentIndex = -1;
-        document.getElementById('courseName').value = '';
     } else {
         courses.forEach((c, i) => {
             const opt = document.createElement('option');
@@ -90,7 +121,6 @@ function renderSelect() {
             sel.appendChild(opt);
         });
         sel.value = currentIndex;
-        document.getElementById('courseName').value = courses[currentIndex]?.name || '';
     }
 }
 
@@ -104,7 +134,7 @@ function startEditing() {
     editingMode = true;
     if (_map) _map.getContainer().style.cursor = 'crosshair';
     renderPointList();
-    updateEditButtons();
+    updateButtons();
 }
 
 function fixCourse() {
@@ -117,7 +147,7 @@ function fixCourse() {
 function exitEditingMode() {
     editingMode = false;
     if (_map) _map.getContainer().style.cursor = '';
-    updateEditButtons();
+    updateButtons();
 }
 
 function onGpsPointClicked(e) {
@@ -130,8 +160,10 @@ function onGpsPointClicked(e) {
 // ========================================
 // ボタン有効/無効
 // ========================================
-function updateEditButtons() {
+function updateButtons() {
     const hasCourse = currentIndex >= 0 && currentIndex < courses.length;
+    document.getElementById('courseRenameBtn').disabled = !hasCourse;
+    document.getElementById('courseDeleteBtn').disabled = !hasCourse;
     document.getElementById('editStartBtn').disabled = !hasCourse || editingMode;
     document.getElementById('fixBtn').disabled = !editingMode;
 }

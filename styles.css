@@ -126,6 +126,18 @@ button:hover {
     min-width: 0;
 }
 
+.course-btn-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.course-btn-row button {
+    flex: 1;
+    padding: 4px 0;
+    font-size: 12px;
+}
+
 .course-name-input {
     width: 100%;
     box-sizing: border-box;
@@ -133,15 +145,16 @@ button:hover {
     padding: 4px 6px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
-.course-btn-row {
+.course-confirm-row {
     display: flex;
     gap: 6px;
+    margin-bottom: 4px;
 }
 
-.course-btn-row button {
+.course-confirm-row button {
     flex: 1;
     padding: 4px 0;
     font-size: 12px;

@@ -55,10 +55,17 @@
                     <label class="course-field-label">コース</label>
                     <select id="courseSelect" class="course-select"></select>
                 </div>
-                <input type="text" id="courseName" class="course-name-input" placeholder="コース名を入力">
                 <div class="course-btn-row">
-                    <button id="courseAddBtn">追加</button>
+                    <button id="courseNewBtn">新規</button>
+                    <button id="courseRenameBtn">名称変更</button>
                     <button id="courseDeleteBtn">削除</button>
+                </div>
+                <div id="courseNameArea" style="display:none;">
+                    <input type="text" id="courseName" class="course-name-input" placeholder="コース名を入力">
+                    <div class="course-confirm-row">
+                        <button id="courseConfirmBtn">確定</button>
+                        <button id="courseCancelBtn">キャンセル</button>
+                    </div>
                 </div>
             </div>
             <div class="point-list-section">
