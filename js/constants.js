@@ -37,7 +37,7 @@ export const DEFAULTS = {
 
     // ルートスタイル
     ROUTE_STYLE: {
-        color: '#0000ff',
+        color: '#4682b4',
         weight: 3,
         opacity: 0.8
     }
