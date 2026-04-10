@@ -13,7 +13,7 @@ let _markerStore = null;
 let _routeFeatureStore = null;
 let courseLayer = null;
 
-// コースオーバーレイ: 赤マーカー
+// コースオーバーレイ: 赤マーカー（interactive: false でクリックを元マーカーに透過）
 const COURSE_POINT_STYLE = {
     radius: 8,
     fillColor: '#ff0000',
@@ -21,7 +21,8 @@ const COURSE_POINT_STYLE = {
     weight: 1,
     stroke: true,
     opacity: 1,
-    fillOpacity: 0.9
+    fillOpacity: 0.9,
+    interactive: false
 };
 
 // コースオーバーレイ: オレンジルート
