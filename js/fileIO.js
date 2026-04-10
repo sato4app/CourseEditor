@@ -257,7 +257,7 @@ export function setupGeoJsonInput(dataLayer) {
                 const [lng, lat] = f.geometry.coordinates;
                 const icon = L.divIcon({
                     className: '',
-                    html: '<div style="width:8px;height:8px;background:#0000ff;border:1px solid white;box-shadow:0 0 2px rgba(0,0,0,0.5);"></div>',
+                    html: '<div style="width:8px;height:8px;background:#3388ff;border:1px solid white;box-shadow:0 0 2px rgba(0,0,0,0.5);"></div>',
                     iconSize: [8, 8],
                     iconAnchor: [4, 4]
                 });
