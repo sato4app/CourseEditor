@@ -257,9 +257,9 @@ export function setupGeoJsonInput(dataLayer) {
                 const [lng, lat] = f.geometry.coordinates;
                 const icon = L.divIcon({
                     className: '',
-                    html: '<div style="width:10px;height:10px;background:#0000ff;border:1px solid white;box-shadow:0 0 2px rgba(0,0,0,0.5);"></div>',
-                    iconSize: [10, 10],
-                    iconAnchor: [5, 5]
+                    html: '<div style="width:7px;height:7px;background:#0000ff;border:1px solid white;box-shadow:0 0 2px rgba(0,0,0,0.5);"></div>',
+                    iconSize: [7, 7],
+                    iconAnchor: [3, 3]
                 });
                 const marker = L.marker([lat, lng], { icon });
                 marker.bindPopup(`${name}<br>(Spot)`);
