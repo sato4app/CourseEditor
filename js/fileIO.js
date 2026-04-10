@@ -15,6 +15,14 @@ const geojsonPointStore = new Map();
 // スポット: [{name, lat, lng}]
 const spotStore = [];
 
+// ========================================
+// コースオーバーレイ用ストア（courseEditorが参照）
+// ========================================
+// GPS・GeoJSONポイント: pointId -> Leafletマーカー
+export const markerStore = new Map();
+// ルートフィーチャー: [{startId, endId, coords: [[lat,lng],...]}]
+export const routeFeatureStore = [];
+
 /**
  * ルート端点の座標を検索する
  * 優先順位: ポイントGPS > GeoJSONポイント > スポット(名称一致、複数なら最近傍)
@@ -149,6 +157,7 @@ export function setupExcelInput(dataLayer) {
                     }
                     return div;
                 });
+                markerStore.set(pid, marker);
                 dataLayer.addLayer(marker);
             });
 
@@ -210,50 +219,60 @@ export function setupGeoJsonInput(dataLayer) {
             }
         });
 
-        // ─── 第2パス: 選択された種別を地図に表示 ───
+        // ─── 第2パス: 全ルートをストアに登録し、選択された場合は地図に表示 ───
         let count = 0;
         allFeatures.forEach(f => {
+            if (classifyFeature(f) !== 'route') return;
+            const props = f.properties || {};
+            const waypointCoords = f.geometry.coordinates.map(c => [c[1], c[0]]);
+
+            // startPoint / endPoint プロパティから開始・終了ポイントIDを取得
+            const startId = props.startPoint != null ? String(props.startPoint) : null;
+            const endId   = props.endPoint   != null ? String(props.endPoint)   : null;
+
+            // 基準点: 中間点の先頭・末尾（最近傍スポット判定用）
+            const refFirst = waypointCoords.length > 0 ? waypointCoords[0] : [0, 0];
+            const refLast  = waypointCoords.length > 0 ? waypointCoords[waypointCoords.length - 1] : [0, 0];
+
+            const startCoord = startId ? findEndpoint(startId, refFirst[0], refFirst[1]) : null;
+            const endCoord   = endId   ? findEndpoint(endId,   refLast[0],  refLast[1])  : null;
+
+            const fullCoords = [
+                ...(startCoord ? [[startCoord.lat, startCoord.lng]] : []),
+                ...waypointCoords,
+                ...(endCoord   ? [[endCoord.lat,   endCoord.lng]]   : [])
+            ];
+
+            // 選択状態に関わらず常にストアに登録（コースエディタのルート検索に使用）
+            routeFeatureStore.push({ startId, endId, coords: fullCoords });
+
+            if (selection.route) {
+                L.polyline(fullCoords, DEFAULTS.ROUTE_STYLE).addTo(dataLayer);
+                count++;
+            }
+        });
+
+        // ─── 第3パス: ポイント・スポットを選択された場合は地図に表示 ───
+        allFeatures.forEach(f => {
             const cls = classifyFeature(f);
-            if (!cls) return;
+            if (cls !== 'point' && cls !== 'spot') return;
             if (!selection[cls]) return;
 
             const props = f.properties || {};
             const name = props.name || '';
 
-            if (cls === 'route') {
-                const waypointCoords = f.geometry.coordinates.map(c => [c[1], c[0]]);
-
-                // startPoint / endPoint プロパティから開始・終了ポイントIDを取得
-                const startId = props.startPoint != null ? String(props.startPoint) : null;
-                const endId   = props.endPoint   != null ? String(props.endPoint)   : null;
-
-                // 基準点: 中間点の先頭・末尾（最近傍スポット判定用）
-                const refFirst = waypointCoords.length > 0 ? waypointCoords[0] : [0, 0];
-                const refLast  = waypointCoords.length > 0 ? waypointCoords[waypointCoords.length - 1] : [0, 0];
-
-                const startCoord = startId ? findEndpoint(startId, refFirst[0], refFirst[1]) : null;
-                const endCoord   = endId   ? findEndpoint(endId,   refLast[0],  refLast[1])  : null;
-
-                const fullCoords = [
-                    ...(startCoord ? [[startCoord.lat, startCoord.lng]] : []),
-                    ...waypointCoords,
-                    ...(endCoord   ? [[endCoord.lat,   endCoord.lng]]   : [])
-                ];
-
-                L.polyline(fullCoords, DEFAULTS.ROUTE_STYLE).addTo(dataLayer);
-                count++;
-
-            } else if (cls === 'point') {
-                // ポイント: 赤の円形、ポイントID + "Point"
+            if (cls === 'point') {
+                // ポイント: aquamarine の円形、ポイントID + "Point"
                 const [lng, lat] = f.geometry.coordinates;
                 const pointId = props.id || props.pointId || '';
                 const marker = L.circleMarker([lat, lng], DEFAULTS.POINT_STYLE);
                 marker.bindPopup(`${pointId}<br>(Point)`);
+                if (pointId) markerStore.set(String(pointId), marker);
                 dataLayer.addLayer(marker);
                 count++;
 
             } else if (cls === 'spot') {
-                // スポット: 青の正方形、スポット名 + "Spot"
+                // スポット: yellowgreen の正方形、スポット名 + "Spot"
                 const [lng, lat] = f.geometry.coordinates;
                 const icon = L.divIcon({
                     className: '',

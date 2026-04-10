@@ -2,7 +2,7 @@
 
 import { MODES } from './constants.js';
 import { initializeMap } from './mapCore.js';
-import { setupExcelInput, setupGeoJsonInput, setupExportButton } from './fileIO.js';
+import { setupExcelInput, setupGeoJsonInput, setupExportButton, markerStore, routeFeatureStore } from './fileIO.js';
 import { setupCourseEditor } from './courseEditor.js';
 
 // 地図とレイヤーの初期化
@@ -14,7 +14,7 @@ setupGeoJsonInput(dataLayer);
 setupExportButton();
 
 // コースエディタの設定
-setupCourseEditor(map);
+setupCourseEditor(map, markerStore, routeFeatureStore);
 
 // モード切り替え処理
 document.querySelectorAll('input[name="mode"]').forEach(radio => {

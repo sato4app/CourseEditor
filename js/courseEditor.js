@@ -9,12 +9,36 @@ let nextId = 1;
 let editingMode = false;
 let nameAreaMode = null; // 'new' | 'rename' | null
 let _map = null;
+let _markerStore = null;
+let _routeFeatureStore = null;
+let courseLayer = null;
+
+// コースオーバーレイ: 赤マーカー
+const COURSE_POINT_STYLE = {
+    radius: 8,
+    fillColor: '#ff0000',
+    color: '#ffffff',
+    weight: 1,
+    stroke: true,
+    opacity: 1,
+    fillOpacity: 0.9
+};
+
+// コースオーバーレイ: オレンジルート
+const COURSE_ROUTE_STYLE = {
+    color: '#ff8c00',
+    weight: 4,
+    opacity: 0.9
+};
 
 // ========================================
 // 初期化
 // ========================================
-export function setupCourseEditor(map) {
+export function setupCourseEditor(map, markerStore, routeFeatureStore) {
     _map = map;
+    _markerStore = markerStore;
+    _routeFeatureStore = routeFeatureStore;
+    courseLayer = L.layerGroup().addTo(map);
 
     document.getElementById('courseNewBtn').addEventListener('click', openNewMode);
     document.getElementById('courseRenameBtn').addEventListener('click', openRenameMode);
@@ -129,8 +153,12 @@ function renderSelect() {
 // ========================================
 function startEditing() {
     if (currentIndex < 0) return;
-    courses[currentIndex].points = [];
-    courses[currentIndex].fixed = false;
+    const course = courses[currentIndex];
+    // 既にポイントが設定済みの場合はクリアせず、そのまま編集を続ける
+    if (course.points.length === 0) {
+        course.points = [];
+    }
+    course.fixed = false;
     editingMode = true;
     if (_map) _map.getContainer().style.cursor = 'crosshair';
     renderPointList();
@@ -166,6 +194,59 @@ function updateButtons() {
     document.getElementById('courseDeleteBtn').disabled = !hasCourse;
     document.getElementById('editStartBtn').disabled = !hasCourse || editingMode;
     document.getElementById('fixBtn').disabled = !editingMode;
+}
+
+// ========================================
+// コースオーバーレイ描画（赤マーカー＋オレンジルート）
+// ========================================
+function calcRouteLength(coords) {
+    let len = 0;
+    for (let i = 1; i < coords.length; i++) {
+        const dlat = coords[i][0] - coords[i - 1][0];
+        const dlng = coords[i][1] - coords[i - 1][1];
+        len += Math.sqrt(dlat * dlat + dlng * dlng);
+    }
+    return len;
+}
+
+function renderCourseOverlay() {
+    if (!courseLayer) return;
+    courseLayer.clearLayers();
+    if (currentIndex < 0 || currentIndex >= courses.length) return;
+
+    const { points } = courses[currentIndex];
+
+    // 赤マーカーを描画
+    points.forEach(p => {
+        const m = _markerStore && _markerStore.get(p.pointId);
+        if (!m) return;
+        L.circleMarker(m.getLatLng(), COURSE_POINT_STYLE).addTo(courseLayer);
+    });
+
+    // 連続するポイント間のルートをオレンジで描画
+    for (let i = 1; i < points.length; i++) {
+        const prevId = points[i - 1].pointId;
+        const currId = points[i].pointId;
+
+        if (!_routeFeatureStore) break;
+        const candidates = _routeFeatureStore.filter(r =>
+            (r.startId === prevId && r.endId === currId) ||
+            (r.startId === currId && r.endId === prevId)
+        );
+        if (candidates.length === 0) continue;
+
+        // 複数候補がある場合は最短ルートを選択
+        let best = candidates[0];
+        if (candidates.length > 1) {
+            let minLen = Infinity;
+            for (const r of candidates) {
+                const len = calcRouteLength(r.coords);
+                if (len < minLen) { minLen = len; best = r; }
+            }
+        }
+
+        L.polyline(best.coords, COURSE_ROUTE_STYLE).addTo(courseLayer);
+    }
 }
 
 // ========================================
@@ -206,4 +287,6 @@ function renderPointList() {
         row.appendChild(nameCell);
         container.appendChild(row);
     });
+
+    renderCourseOverlay();
 }
