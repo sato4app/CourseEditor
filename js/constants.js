@@ -24,11 +24,11 @@ export const DEFAULTS = {
         fillOpacity: 1
     },
 
-    // ポイント (GeoJSON): 赤の円形
+    // ポイント (GeoJSON): aquamarine の円形
     POINT_STYLE: {
         radius: 6,
-        fillColor: '#ff0000',
-        color: '#ff0000',
+        fillColor: '#7fffd4',
+        color: '#7fffd4',
         weight: 0,
         stroke: false,
         opacity: 1,
