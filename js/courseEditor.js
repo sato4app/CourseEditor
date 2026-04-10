@@ -25,11 +25,12 @@ const COURSE_POINT_STYLE = {
     interactive: false
 };
 
-// コースオーバーレイ: オレンジルート
+// コースオーバーレイ: オレンジルート（interactive: false でマーカーへのクリックを妨げない）
 const COURSE_ROUTE_STYLE = {
     color: '#ff8c00',
     weight: 4,
-    opacity: 0.9
+    opacity: 0.9,
+    interactive: false
 };
 
 // ========================================

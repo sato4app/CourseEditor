@@ -35,11 +35,12 @@ export const DEFAULTS = {
         fillOpacity: 1
     },
 
-    // ルートスタイル
+    // ルートスタイル（interactive: false でマーカーへのクリックを妨げない）
     ROUTE_STYLE: {
         color: '#4682b4',
         weight: 3,
-        opacity: 0.8
+        opacity: 0.8,
+        interactive: false
     }
 };
 
