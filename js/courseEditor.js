@@ -2,7 +2,8 @@
 
 export function isEditingMode() { return editingMode; }
 
-// courses[i] = { id, name, points: [{ pointId, name }], fixed: bool }
+// courses[i] = { id, name, points: [{ pointId, name }], segmentRoutes: [coords|null,...], fixed: bool }
+// segmentRoutes[i] = points[i] → points[i+1] 間のルート座標（一度確定したら保持）
 const courses = [];
 let currentIndex = -1;
 let nextId = 1;
@@ -94,7 +95,7 @@ function confirmName() {
     if (!name) return;
 
     if (nameAreaMode === 'new') {
-        courses.push({ id: nextId++, name, points: [], fixed: false });
+        courses.push({ id: nextId++, name, points: [], segmentRoutes: [], fixed: false });
         currentIndex = courses.length - 1;
         renderSelect();
         renderPointList();
@@ -189,8 +190,13 @@ function exitEditingMode() {
 function onGpsPointClicked(e) {
     if (!editingMode || currentIndex < 0) return;
     const { pointId, name } = e.detail;
-    courses[currentIndex].points.push({ pointId, name });
-    renderPointList();
+    const course = courses[currentIndex];
+    course.points.push({ pointId, name });
+    // 新セグメントのキャッシュスロットを追加（既存分はそのまま保持）
+    if (course.segmentRoutes.length < course.points.length - 1) {
+        course.segmentRoutes.push(null);
+    }
+    renderPointList(true);
 }
 
 // ========================================
@@ -222,7 +228,8 @@ function renderCourseOverlay() {
     courseLayer.clearLayers();
     if (currentIndex < 0 || currentIndex >= courses.length) return;
 
-    const { points } = courses[currentIndex];
+    const course = courses[currentIndex];
+    const { points, segmentRoutes } = course;
 
     // 赤マーカーを描画
     points.forEach(p => {
@@ -233,10 +240,18 @@ function renderCourseOverlay() {
 
     // 連続するポイント間のルートをオレンジで描画
     for (let i = 1; i < points.length; i++) {
+        const segIdx = i - 1;
+
+        // キャッシュ済みのルート座標があればそのまま使用（解除しない）
+        if (segmentRoutes[segIdx]) {
+            L.polyline(segmentRoutes[segIdx], COURSE_ROUTE_STYLE).addTo(courseLayer);
+            continue;
+        }
+
+        // 未キャッシュの場合はルートストアから検索
+        if (!_routeFeatureStore) break;
         const prevId = points[i - 1].pointId;
         const currId = points[i].pointId;
-
-        if (!_routeFeatureStore) break;
         const candidates = _routeFeatureStore.filter(r =>
             (r.startId === prevId && r.endId === currId) ||
             (r.startId === currId && r.endId === prevId)
@@ -253,6 +268,8 @@ function renderCourseOverlay() {
             }
         }
 
+        // 見つかったルートをキャッシュに保存してから描画
+        segmentRoutes[segIdx] = best.coords;
         L.polyline(best.coords, COURSE_ROUTE_STYLE).addTo(courseLayer);
     }
 }
@@ -266,7 +283,7 @@ function getNoLabel(index, total, fixed) {
     return `中間${index}`;
 }
 
-function renderPointList() {
+function renderPointList(redrawOverlay = true) {
     const container = document.getElementById('pointListContainer');
     container.innerHTML = '';
     if (currentIndex < 0 || currentIndex >= courses.length) return;
@@ -279,7 +296,8 @@ function renderPointList() {
         row.className = 'point-row' + (i === selectedPointIndex ? ' point-row-selected' : '');
         row.addEventListener('click', () => {
             selectedPointIndex = (selectedPointIndex === i) ? -1 : i;
-            renderPointList();
+            // 行選択の変更はオーバーレイに影響しないため再描画しない
+            renderPointList(false);
         });
 
         const noCell = document.createElement('span');
@@ -300,5 +318,5 @@ function renderPointList() {
         container.appendChild(row);
     });
 
-    renderCourseOverlay();
+    if (redrawOverlay) renderCourseOverlay();
 }
