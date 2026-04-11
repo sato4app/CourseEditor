@@ -8,6 +8,7 @@ let currentIndex = -1;
 let nextId = 1;
 let editingMode = false;
 let nameAreaMode = null; // 'new' | 'rename' | null
+let selectedPointIndex = -1; // 選択中のポイント行インデックス
 let _map = null;
 let _markerStore = null;
 let _routeFeatureStore = null;
@@ -114,6 +115,7 @@ function deleteCourse() {
     if (currentIndex < 0 || currentIndex >= courses.length) return;
     if (editingMode) exitEditingMode();
     closeNameArea();
+    selectedPointIndex = -1;
     courses.splice(currentIndex, 1);
     currentIndex = courses.length > 0 ? Math.min(currentIndex, courses.length - 1) : -1;
     renderSelect();
@@ -124,6 +126,7 @@ function deleteCourse() {
 function onSelectChange() {
     if (editingMode) exitEditingMode();
     closeNameArea();
+    selectedPointIndex = -1;
     const val = parseInt(document.getElementById('courseSelect').value, 10);
     currentIndex = isNaN(val) ? -1 : val;
     renderPointList();
@@ -273,7 +276,11 @@ function renderPointList() {
 
     points.forEach((p, i) => {
         const row = document.createElement('div');
-        row.className = 'point-row';
+        row.className = 'point-row' + (i === selectedPointIndex ? ' point-row-selected' : '');
+        row.addEventListener('click', () => {
+            selectedPointIndex = (selectedPointIndex === i) ? -1 : i;
+            renderPointList();
+        });
 
         const noCell = document.createElement('span');
         noCell.className = 'point-no';

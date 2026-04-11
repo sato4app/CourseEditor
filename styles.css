@@ -195,6 +195,12 @@ button:hover {
     align-items: center;
     gap: 4px;
     margin-bottom: 3px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.point-row-selected {
+    background-color: #ffe8cc;
 }
 
 .point-no {
