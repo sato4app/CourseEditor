@@ -233,6 +233,15 @@ button:hover {
     font-size: 12px;
 }
 
+.course-icon-btn {
+    flex: none !important;
+    width: 26px;
+    padding: 4px 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* プレースホルダーパネル */
 .placeholder-panel {
     border: 2px solid #ccc;

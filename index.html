@@ -71,13 +71,22 @@
             <div class="point-list-section">
                 <div class="point-list-header">
                     <span class="point-no-head">No.</span>
-                    <span class="point-id-head">ポイントID</span>
+                    <span class="point-id-head">Point</span>
                     <span class="point-name-head">名称</span>
                 </div>
                 <div id="pointListContainer"></div>
                 <div class="course-edit-btn-row">
-                    <button id="editStartBtn">編集開始</button>
+                    <button id="editStartBtn">追加</button>
                     <button id="fixBtn" disabled>固定</button>
+                    <button id="pointUpBtn" class="course-icon-btn" disabled title="上へ移動">
+                        <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M8 3L2 11h12L8 3z"/></svg>
+                    </button>
+                    <button id="pointDownBtn" class="course-icon-btn" disabled title="下へ移動">
+                        <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M8 13L2 5h12L8 13z"/></svg>
+                    </button>
+                    <button id="pointRemoveBtn" class="course-icon-btn" disabled title="削除">
+                        <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><rect x="2" y="7" width="12" height="2" rx="1"/></svg>
+                    </button>
                 </div>
             </div>
         </div>

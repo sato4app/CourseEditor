@@ -54,6 +54,9 @@ export function setupCourseEditor(map, markerStore, routeFeatureStore) {
     });
     document.getElementById('editStartBtn').addEventListener('click', startEditing);
     document.getElementById('fixBtn').addEventListener('click', fixCourse);
+    document.getElementById('pointUpBtn').addEventListener('click', () => { /* 仕様未定 */ });
+    document.getElementById('pointDownBtn').addEventListener('click', () => { /* 仕様未定 */ });
+    document.getElementById('pointRemoveBtn').addEventListener('click', () => { /* 仕様未定 */ });
 
     document.addEventListener('gpsPointClicked', onGpsPointClicked);
 
