@@ -256,7 +256,15 @@ function renderCourseOverlay() {
             (r.startId === prevId && r.endId === currId) ||
             (r.startId === currId && r.endId === prevId)
         );
-        if (candidates.length === 0) continue;
+        if (candidates.length === 0) {
+            // ルートが未定義の場合は直線で結ぶ（キャッシュしない）
+            const prevMarker = _markerStore && _markerStore.get(prevId);
+            const currMarker = _markerStore && _markerStore.get(currId);
+            if (prevMarker && currMarker) {
+                L.polyline([prevMarker.getLatLng(), currMarker.getLatLng()], COURSE_ROUTE_STYLE).addTo(courseLayer);
+            }
+            continue;
+        }
 
         // 複数候補がある場合は最短ルートを選択
         let best = candidates[0];
