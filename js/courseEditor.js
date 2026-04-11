@@ -56,9 +56,9 @@ export function setupCourseEditor(map, markerStore, routeFeatureStore) {
     });
     document.getElementById('editStartBtn').addEventListener('click', startEditing);
     document.getElementById('fixBtn').addEventListener('click', fixCourse);
-    document.getElementById('pointUpBtn').addEventListener('click', () => { /* 仕様未定 */ });
-    document.getElementById('pointDownBtn').addEventListener('click', () => { /* 仕様未定 */ });
-    document.getElementById('pointRemoveBtn').addEventListener('click', () => { /* 仕様未定 */ });
+    document.getElementById('pointUpBtn').addEventListener('click', movePointUp);
+    document.getElementById('pointDownBtn').addEventListener('click', movePointDown);
+    document.getElementById('pointRemoveBtn').addEventListener('click', removePoint);
 
     document.addEventListener('gpsPointClicked', onGpsPointClicked);
 
@@ -200,14 +200,67 @@ function onGpsPointClicked(e) {
 }
 
 // ========================================
+// ポイント移動・削除
+// ========================================
+function movePointUp() {
+    if (currentIndex < 0 || selectedPointIndex <= 0) return;
+    const { points, segmentRoutes } = courses[currentIndex];
+    const i = selectedPointIndex;
+    [points[i - 1], points[i]] = [points[i], points[i - 1]];
+    // 前後の隣接セグメントを無効化（接続先が変わるため）
+    if (i - 2 >= 0) segmentRoutes[i - 2] = null;
+    if (i < segmentRoutes.length) segmentRoutes[i] = null;
+    selectedPointIndex = i - 1;
+    renderPointList();
+}
+
+function movePointDown() {
+    if (currentIndex < 0 || selectedPointIndex < 0) return;
+    const { points, segmentRoutes } = courses[currentIndex];
+    const i = selectedPointIndex;
+    if (i >= points.length - 1) return;
+    [points[i], points[i + 1]] = [points[i + 1], points[i]];
+    // 前後の隣接セグメントを無効化
+    if (i - 1 >= 0) segmentRoutes[i - 1] = null;
+    if (i + 1 < segmentRoutes.length) segmentRoutes[i + 1] = null;
+    selectedPointIndex = i + 1;
+    renderPointList();
+}
+
+function removePoint() {
+    if (currentIndex < 0 || selectedPointIndex < 0) return;
+    const { points, segmentRoutes } = courses[currentIndex];
+    const i = selectedPointIndex;
+    points.splice(i, 1);
+    if (points.length === 0) {
+        segmentRoutes.length = 0;
+    } else if (i === 0) {
+        segmentRoutes.splice(0, 1);
+    } else if (i >= points.length) {
+        // 末尾ポイントを削除した場合
+        segmentRoutes.splice(segmentRoutes.length - 1, 1);
+    } else {
+        // 中間ポイントを削除: 前後2セグメントを除去し、新しい接続にnullを挿入
+        segmentRoutes.splice(i - 1, 2, null);
+    }
+    selectedPointIndex = -1;
+    renderPointList();
+}
+
+// ========================================
 // ボタン有効/無効
 // ========================================
 function updateButtons() {
     const hasCourse = currentIndex >= 0 && currentIndex < courses.length;
+    const total = hasCourse ? courses[currentIndex].points.length : 0;
+    const sel = selectedPointIndex;
     document.getElementById('courseRenameBtn').disabled = !hasCourse;
     document.getElementById('courseDeleteBtn').disabled = !hasCourse;
     document.getElementById('editStartBtn').disabled = !hasCourse || editingMode;
     document.getElementById('fixBtn').disabled = !editingMode;
+    document.getElementById('pointUpBtn').disabled = sel <= 0;
+    document.getElementById('pointDownBtn').disabled = sel < 0 || sel >= total - 1;
+    document.getElementById('pointRemoveBtn').disabled = sel < 0;
 }
 
 // ========================================
@@ -306,6 +359,7 @@ function renderPointList(redrawOverlay = true) {
             selectedPointIndex = (selectedPointIndex === i) ? -1 : i;
             // 行選択の変更はオーバーレイに影響しないため再描画しない
             renderPointList(false);
+            updateButtons();
         });
 
         const noCell = document.createElement('span');
