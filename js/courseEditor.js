@@ -191,11 +191,30 @@ function onGpsPointClicked(e) {
     if (!editingMode || currentIndex < 0) return;
     const { pointId, name } = e.detail;
     const course = courses[currentIndex];
-    course.points.push({ pointId, name });
-    // 新セグメントのキャッシュスロットを追加（既存分はそのまま保持）
-    if (course.segmentRoutes.length < course.points.length - 1) {
-        course.segmentRoutes.push(null);
+
+    if (selectedPointIndex >= 0 && selectedPointIndex < course.points.length) {
+        // 選択行の次に挿入
+        const insertIndex = selectedPointIndex + 1;
+        course.points.splice(insertIndex, 0, { pointId, name });
+
+        const N = course.points.length; // 挿入後の要素数
+        if (insertIndex >= N - 1) {
+            // 末尾への追加
+            course.segmentRoutes.push(null);
+        } else {
+            // 中間への挿入: 既存セグメントを2つのnullスロットに置換
+            course.segmentRoutes.splice(insertIndex - 1, 1, null, null);
+        }
+
+        selectedPointIndex = insertIndex;
+    } else {
+        // 選択なし: 末尾に追加
+        course.points.push({ pointId, name });
+        if (course.segmentRoutes.length < course.points.length - 1) {
+            course.segmentRoutes.push(null);
+        }
     }
+
     renderPointList(true);
 }
 
