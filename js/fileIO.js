@@ -3,7 +3,7 @@
 import { DEFAULTS } from './constants.js';
 import { showMessage } from './message.js';
 import { loadExcelFile } from './excelLoader.js';
-import { isEditingMode, getCourses } from './courseEditor.js';
+import { isEditingMode, getCourses, loadCourses } from './courseEditor.js';
 
 // ========================================
 // ポイント・スポットのストア（ルート端点検索用）
@@ -364,7 +364,11 @@ export function setupExportButton() {
                     id: c.id,
                     name: c.name,
                     fixed: c.fixed,
-                    points: c.points.map(p => ({ pointId: p.pointId, name: p.name }))
+                    points: c.points.map(p => ({ pointId: p.pointId, name: p.name })),
+                    // 再読み込み用: セグメントルートを [lng, lat] 形式で保存
+                    segments: c.segmentRoutes.map(seg =>
+                        seg ? seg.map(coord => [coord[1], coord[0]]) : null
+                    )
                 }
             }));
 
@@ -385,5 +389,61 @@ export function setupExportButton() {
         URL.revokeObjectURL(url);
 
         showMessage(`${features.length}件のコースを ${filename} に出力しました`);
+    });
+}
+
+// ========================================
+// ハイキングコースのファイル読み込み（GeoJSON）
+// ========================================
+export function setupImportCourseButton() {
+    document.getElementById('courseImportInput').addEventListener('change', async function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const text = await file.text();
+            const geojson = JSON.parse(text);
+
+            if (!geojson.features || !Array.isArray(geojson.features)) {
+                showMessage('有効なGeoJSONではありません', 'error');
+                return;
+            }
+
+            const imported = geojson.features
+                .filter(f => f.properties && Array.isArray(f.properties.points))
+                .map(f => {
+                    const props = f.properties;
+                    const points = props.points.map(p => ({
+                        pointId: String(p.pointId),
+                        name: p.name || ''
+                    }));
+                    // segments: [lng, lat] → Leaflet [lat, lng] に戻す
+                    const segsRaw = Array.isArray(props.segments)
+                        ? props.segments
+                        : new Array(Math.max(0, points.length - 1)).fill(null);
+                    const segmentRoutes = segsRaw.map(seg =>
+                        seg ? seg.map(c => [c[1], c[0]]) : null
+                    );
+                    return {
+                        id: Number(props.id) || 0,
+                        name: props.name || '',
+                        fixed: Boolean(props.fixed),
+                        points,
+                        segmentRoutes
+                    };
+                });
+
+            if (imported.length === 0) {
+                showMessage('読み込めるコースがありませんでした', 'warning');
+                return;
+            }
+
+            loadCourses(imported);
+            showMessage(`${imported.length}件のコースを読み込みました`);
+        } catch (err) {
+            showMessage(`読み込みエラー: ${err.message}`, 'error');
+        } finally {
+            this.value = '';
+        }
     });
 }

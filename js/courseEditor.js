@@ -3,6 +3,19 @@
 export function isEditingMode() { return editingMode; }
 export function getCourses() { return courses; }
 
+export function loadCourses(newCourses) {
+    if (editingMode) exitEditingMode();
+    closeNameArea();
+    courses.length = 0;
+    newCourses.forEach(c => courses.push(c));
+    nextId = courses.reduce((max, c) => Math.max(max, c.id), 0) + 1;
+    currentIndex = courses.length > 0 ? 0 : -1;
+    selectedPointIndex = -1;
+    renderSelect();
+    renderPointList();
+    updateButtons();
+}
+
 // courses[i] = { id, name, points: [{ pointId, name }], segmentRoutes: [coords|null,...], fixed: bool }
 // segmentRoutes[i] = points[i] → points[i+1] 間のルート座標（一度確定したら保持）
 const courses = [];
@@ -367,7 +380,10 @@ function getNoLabel(index, total, fixed) {
 function renderPointList(redrawOverlay = true) {
     const container = document.getElementById('pointListContainer');
     container.innerHTML = '';
-    if (currentIndex < 0 || currentIndex >= courses.length) return;
+    if (currentIndex < 0 || currentIndex >= courses.length) {
+        if (redrawOverlay) renderCourseOverlay();
+        return;
+    }
 
     const { points, fixed } = courses[currentIndex];
     const total = points.length;

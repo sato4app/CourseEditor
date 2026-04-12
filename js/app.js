@@ -2,7 +2,7 @@
 
 import { MODES } from './constants.js';
 import { initializeMap } from './mapCore.js';
-import { setupExcelInput, setupGeoJsonInput, setupExportButton, markerStore, routeFeatureStore } from './fileIO.js';
+import { setupExcelInput, setupGeoJsonInput, setupExportButton, setupImportCourseButton, markerStore, routeFeatureStore } from './fileIO.js';
 import { setupCourseEditor } from './courseEditor.js';
 
 // 地図とレイヤーの初期化
@@ -12,6 +12,7 @@ const { map, dataLayer } = initializeMap();
 setupExcelInput(dataLayer);
 setupGeoJsonInput(dataLayer);
 setupExportButton();
+setupImportCourseButton();
 
 // コースエディタの設定
 setupCourseEditor(map, markerStore, routeFeatureStore);
