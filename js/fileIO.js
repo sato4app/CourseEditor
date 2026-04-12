@@ -294,8 +294,56 @@ export function setupGeoJsonInput(dataLayer) {
 }
 
 // ========================================
-// ハイキングコースのファイル出力
+// ハイキングコースのファイル出力（GeoJSON）
 // ========================================
+
+/**
+ * コースの全座標を GeoJSON 用 [lng, lat] 配列として組み立てる
+ * キャッシュ済みセグメントを優先し、未キャッシュはマーカーストアから直線で補完する
+ */
+function buildCourseCoords(course) {
+    const { points, segmentRoutes } = course;
+    if (points.length === 0) return [];
+
+    // ポイントが1つだけ
+    if (points.length === 1) {
+        const m = markerStore.get(points[0].pointId);
+        if (!m) return [];
+        const { lat, lng } = m.getLatLng();
+        return [[lng, lat]];
+    }
+
+    const coords = [];
+    for (let i = 0; i < points.length - 1; i++) {
+        const seg = segmentRoutes[i]; // [[lat, lng], ...] (Leaflet形式)
+        if (seg && seg.length > 0) {
+            // Leaflet [lat, lng] → GeoJSON [lng, lat] に変換
+            const converted = seg.map(c => [c[1], c[0]]);
+            if (i === 0) {
+                coords.push(...converted);
+            } else {
+                // 先頭座標は前セグメントの末尾と重複するためスキップ
+                coords.push(...converted.slice(1));
+            }
+        } else {
+            // 未キャッシュ: マーカーストアから直線で補完
+            if (i === 0) {
+                const m0 = markerStore.get(points[0].pointId);
+                if (m0) {
+                    const ll = m0.getLatLng();
+                    coords.push([ll.lng, ll.lat]);
+                }
+            }
+            const m1 = markerStore.get(points[i + 1].pointId);
+            if (m1) {
+                const ll = m1.getLatLng();
+                coords.push([ll.lng, ll.lat]);
+            }
+        }
+    }
+    return coords;
+}
+
 export function setupExportButton() {
     document.getElementById('exportBtn').addEventListener('click', function () {
         const courses = getCourses();
@@ -304,15 +352,31 @@ export function setupExportButton() {
             return;
         }
 
-        const json = JSON.stringify(courses, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
+        const features = courses
+            .filter(c => c.points.length > 0)
+            .map(c => ({
+                type: 'Feature',
+                geometry: {
+                    type: 'LineString',
+                    coordinates: buildCourseCoords(c)
+                },
+                properties: {
+                    id: c.id,
+                    name: c.name,
+                    fixed: c.fixed,
+                    points: c.points.map(p => ({ pointId: p.pointId, name: p.name }))
+                }
+            }));
+
+        const geojson = { type: 'FeatureCollection', features };
+        const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: 'application/geo+json' });
         const url = URL.createObjectURL(blob);
 
         const today = new Date();
         const yyyymmdd = today.getFullYear().toString()
             + String(today.getMonth() + 1).padStart(2, '0')
             + String(today.getDate()).padStart(2, '0');
-        const filename = `hiking-courses_${yyyymmdd}.json`;
+        const filename = `hiking-courses_${yyyymmdd}.geojson`;
 
         const a = document.createElement('a');
         a.href = url;
@@ -320,6 +384,6 @@ export function setupExportButton() {
         a.click();
         URL.revokeObjectURL(url);
 
-        showMessage(`${courses.length}件のコースを ${filename} に出力しました`);
+        showMessage(`${features.length}件のコースを ${filename} に出力しました`);
     });
 }
