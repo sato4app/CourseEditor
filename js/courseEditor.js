@@ -61,7 +61,7 @@ const COURSE_POINT_STYLE_OTHER = {
     interactive: false
 };
 const COURSE_ROUTE_STYLE_OTHER = {
-    color: '#ffd700',
+    color: '#d2b48c',
     weight: 4,
     opacity: 0.9,
     interactive: false
