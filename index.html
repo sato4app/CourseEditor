@@ -29,6 +29,10 @@
                 <input type="radio" name="mode" value="photo">
                 <span>コース用写真の選択</span>
             </label>
+            <label>
+                <input type="radio" name="mode" value="color">
+                <span>コース用マーカーの色設定</span>
+            </label>
         </div>
 
         <!-- ファイルの入出力パネル -->
@@ -94,6 +98,32 @@
             <div class="placeholder-panel">
                 <p>コース用写真の選択</p>
                 <p class="placeholder-note">（仕様検討中）</p>
+            </div>
+        </div>
+
+        <!-- コース用マーカーの色設定パネル -->
+        <div id="colorPanel" style="display: none;">
+            <div class="color-group-title">選択中コース</div>
+            <div class="color-row">
+                <label class="color-label">ポイント</label>
+                <input type="text" id="colorSelectedPoint" class="color-input" value="#ff0000">
+                <span class="color-swatch" id="swatchSelectedPoint" style="background:#ff0000;"></span>
+            </div>
+            <div class="color-row">
+                <label class="color-label">ルート</label>
+                <input type="text" id="colorSelectedRoute" class="color-input" value="#ff8c00">
+                <span class="color-swatch" id="swatchSelectedRoute" style="background:#ff8c00;"></span>
+            </div>
+            <div class="color-group-title">その他のコース</div>
+            <div class="color-row">
+                <label class="color-label">ポイント</label>
+                <input type="text" id="colorOtherPoint" class="color-input" value="#f08080">
+                <span class="color-swatch" id="swatchOtherPoint" style="background:#f08080;"></span>
+            </div>
+            <div class="color-row">
+                <label class="color-label">ルート</label>
+                <input type="text" id="colorOtherRoute" class="color-input" value="#d2b48c">
+                <span class="color-swatch" id="swatchOtherRoute" style="background:#d2b48c;"></span>
             </div>
         </div>
     </div>

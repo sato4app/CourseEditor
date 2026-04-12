@@ -48,5 +48,6 @@ export const DEFAULTS = {
 export const MODES = {
     FILEIO: 'fileio',
     COURSE: 'course',
-    PHOTO: 'photo'
+    PHOTO: 'photo',
+    COLOR: 'color'
 };

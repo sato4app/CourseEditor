@@ -3,7 +3,7 @@
 import { MODES } from './constants.js';
 import { initializeMap } from './mapCore.js';
 import { setupExcelInput, setupGeoJsonInput, setupExportButton, setupImportCourseButton, markerStore, routeFeatureStore } from './fileIO.js';
-import { setupCourseEditor } from './courseEditor.js';
+import { setupCourseEditor, setMarkerColors } from './courseEditor.js';
 
 // 地図とレイヤーの初期化
 const { map, dataLayer } = initializeMap();
@@ -35,5 +35,22 @@ document.querySelectorAll('input[name="mode"]').forEach(radio => {
             this.value === MODES.COURSE ? 'block' : 'none';
         document.getElementById('photoPanel').style.display =
             this.value === MODES.PHOTO ? 'block' : 'none';
+        document.getElementById('colorPanel').style.display =
+            this.value === MODES.COLOR ? 'block' : 'none';
+    });
+});
+
+// 色設定パネルのイベント配線
+[
+    { id: 'colorSelectedPoint', swatchId: 'swatchSelectedPoint', key: 'selectedPoint' },
+    { id: 'colorSelectedRoute', swatchId: 'swatchSelectedRoute', key: 'selectedRoute' },
+    { id: 'colorOtherPoint',    swatchId: 'swatchOtherPoint',    key: 'otherPoint'    },
+    { id: 'colorOtherRoute',    swatchId: 'swatchOtherRoute',    key: 'otherRoute'    },
+].forEach(({ id, swatchId, key }) => {
+    document.getElementById(id).addEventListener('change', function () {
+        const color = this.value.trim();
+        if (!color) return;
+        document.getElementById(swatchId).style.background = color;
+        setMarkerColors({ [key]: color });
     });
 });

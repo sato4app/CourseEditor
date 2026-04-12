@@ -2,6 +2,13 @@
 
 export function isEditingMode() { return editingMode; }
 export function getCourses() { return courses; }
+export function setMarkerColors({ selectedPoint, selectedRoute, otherPoint, otherRoute } = {}) {
+    if (selectedPoint !== undefined) COURSE_POINT_STYLE.fillColor = selectedPoint;
+    if (selectedRoute !== undefined) COURSE_ROUTE_STYLE.color = selectedRoute;
+    if (otherPoint  !== undefined) COURSE_POINT_STYLE_OTHER.fillColor = otherPoint;
+    if (otherRoute  !== undefined) COURSE_ROUTE_STYLE_OTHER.color = otherRoute;
+    renderCourseOverlay();
+}
 
 export function loadCourses(newCourses) {
     if (editingMode) exitEditingMode();

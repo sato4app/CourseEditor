@@ -245,6 +245,48 @@ button:hover {
     padding: 4px 4px !important;
 }
 
+/* コース用マーカーの色設定パネル */
+.color-group-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    margin: 8px 0 4px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 2px;
+}
+
+.color-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.color-label {
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    width: 44px;
+}
+
+.color-input {
+    flex: 1;
+    font-size: 12px;
+    padding: 3px 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-width: 0;
+}
+
+.color-swatch {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 1px solid #999;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
 /* プレースホルダーパネル */
 .placeholder-panel {
     border: 2px solid #ccc;
