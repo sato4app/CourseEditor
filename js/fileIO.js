@@ -3,7 +3,7 @@
 import { DEFAULTS } from './constants.js';
 import { showMessage } from './message.js';
 import { loadExcelFile } from './excelLoader.js';
-import { isEditingMode } from './courseEditor.js';
+import { isEditingMode, getCourses } from './courseEditor.js';
 
 // ========================================
 // ポイント・スポットのストア（ルート端点検索用）
@@ -294,10 +294,32 @@ export function setupGeoJsonInput(dataLayer) {
 }
 
 // ========================================
-// ハイキングコースのファイル出力（仕様未定）
+// ハイキングコースのファイル出力
 // ========================================
 export function setupExportButton() {
     document.getElementById('exportBtn').addEventListener('click', function () {
-        showMessage('ハイキングコースのファイル出力は準備中です', 'warning');
+        const courses = getCourses();
+        if (courses.length === 0) {
+            showMessage('出力するコースがありません', 'warning');
+            return;
+        }
+
+        const json = JSON.stringify(courses, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const today = new Date();
+        const yyyymmdd = today.getFullYear().toString()
+            + String(today.getMonth() + 1).padStart(2, '0')
+            + String(today.getDate()).padStart(2, '0');
+        const filename = `hiking-courses_${yyyymmdd}.json`;
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        showMessage(`${courses.length}件のコースを ${filename} に出力しました`);
     });
 }

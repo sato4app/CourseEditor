@@ -1,6 +1,7 @@
 // コースの作成・編集
 
 export function isEditingMode() { return editingMode; }
+export function getCourses() { return courses; }
 
 // courses[i] = { id, name, points: [{ pointId, name }], segmentRoutes: [coords|null,...], fixed: bool }
 // segmentRoutes[i] = points[i] → points[i+1] 間のルート座標（一度確定したら保持）
