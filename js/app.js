@@ -51,8 +51,8 @@ const COLOR_FIELDS = [
 const COLOR_DEFAULTS = {
     selectedPoint: '#ff0000',
     selectedRoute: '#ff8c00',
-    otherPoint:    '#f08080',
-    otherRoute:    '#d2b48c',
+    otherPoint:    '#b22222',
+    otherRoute:    '#f08080',
 };
 
 COLOR_FIELDS.forEach(({ id, swatchId, key }) => {
