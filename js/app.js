@@ -64,19 +64,6 @@ COLOR_FIELDS.forEach(({ id, swatchId, key }) => {
     });
 });
 
-// 設定を反映ボタン
-document.getElementById('colorApplyBtn').addEventListener('click', () => {
-    const config = {};
-    COLOR_FIELDS.forEach(({ id, swatchId, key }) => {
-        const color = document.getElementById(id).value.trim();
-        if (color) {
-            document.getElementById(swatchId).style.background = color;
-            config[key] = color;
-        }
-    });
-    setMarkerColors(config);
-});
-
 // デフォルト値に戻すボタン
 document.getElementById('colorResetBtn').addEventListener('click', () => {
     COLOR_FIELDS.forEach(({ id, swatchId, key }) => {

@@ -10,6 +10,8 @@ import { isEditingMode, getCourses, loadCourses } from './courseEditor.js';
 // ========================================
 // ポイントGPS (Excel): pointId -> {lat, lng}
 const gpsPointStore = new Map();
+// 標高 (Excel): pointId -> elevation
+const elevationStore = new Map();
 // GeoJSONポイント (type=point): pointId -> {lat, lng}
 const geojsonPointStore = new Map();
 // スポット: [{name, lat, lng}]
@@ -137,6 +139,7 @@ export function setupExcelInput(dataLayer) {
 
                 // ストアに登録（ルート端点検索用）
                 gpsPointStore.set(pid, { lat: p.lat, lng: p.lng });
+                if (p.elevation !== undefined) elevationStore.set(pid, p.elevation);
 
                 // 地図に表示
                 const marker = L.circleMarker([p.lat, p.lng], DEFAULTS.GPS_POINT_STYLE);
@@ -298,7 +301,16 @@ export function setupGeoJsonInput(dataLayer) {
 // ========================================
 
 /**
- * コースの全座標を GeoJSON 用 [lng, lat] 配列として組み立てる
+ * [lng, lat] に標高があれば [lng, lat, elevation] を返すヘルパー
+ */
+function withElev(lng, lat, pointId) {
+    const e = elevationStore.get(pointId);
+    return e !== undefined ? [lng, lat, e] : [lng, lat];
+}
+
+/**
+ * コースの全座標を GeoJSON 用 [lng, lat(, elevation)] 配列として組み立てる
+ * GPSポイント位置（セグメントの先頭・末尾）に標高値があれば第3要素として付加する
  * キャッシュ済みセグメントを優先し、未キャッシュはマーカーストアから直線で補完する
  */
 function buildCourseCoords(course) {
@@ -310,15 +322,23 @@ function buildCourseCoords(course) {
         const m = markerStore.get(points[0].pointId);
         if (!m) return [];
         const { lat, lng } = m.getLatLng();
-        return [[lng, lat]];
+        return [withElev(lng, lat, points[0].pointId)];
     }
 
     const coords = [];
     for (let i = 0; i < points.length - 1; i++) {
         const seg = segmentRoutes[i]; // [[lat, lng], ...] (Leaflet形式)
+        const startId = points[i].pointId;
+        const endId   = points[i + 1].pointId;
+
         if (seg && seg.length > 0) {
-            // Leaflet [lat, lng] → GeoJSON [lng, lat] に変換
-            const converted = seg.map(c => [c[1], c[0]]);
+            // Leaflet [lat, lng] → GeoJSON [lng, lat(, elev)] に変換
+            // セグメントの先頭 = points[i]、末尾 = points[i+1] の位置
+            const converted = seg.map((c, idx) => {
+                if (idx === 0)             return withElev(c[1], c[0], startId);
+                if (idx === seg.length - 1) return withElev(c[1], c[0], endId);
+                return [c[1], c[0]]; // 中間ウェイポイントは標高なし
+            });
             if (i === 0) {
                 coords.push(...converted);
             } else {
@@ -328,16 +348,16 @@ function buildCourseCoords(course) {
         } else {
             // 未キャッシュ: マーカーストアから直線で補完
             if (i === 0) {
-                const m0 = markerStore.get(points[0].pointId);
+                const m0 = markerStore.get(startId);
                 if (m0) {
                     const ll = m0.getLatLng();
-                    coords.push([ll.lng, ll.lat]);
+                    coords.push(withElev(ll.lng, ll.lat, startId));
                 }
             }
-            const m1 = markerStore.get(points[i + 1].pointId);
+            const m1 = markerStore.get(endId);
             if (m1) {
                 const ll = m1.getLatLng();
-                coords.push([ll.lng, ll.lat]);
+                coords.push(withElev(ll.lng, ll.lat, endId));
             }
         }
     }
