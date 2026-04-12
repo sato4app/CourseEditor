@@ -41,16 +41,48 @@ document.querySelectorAll('input[name="mode"]').forEach(radio => {
 });
 
 // 色設定パネルのイベント配線
-[
+const COLOR_FIELDS = [
     { id: 'colorSelectedPoint', swatchId: 'swatchSelectedPoint', key: 'selectedPoint' },
     { id: 'colorSelectedRoute', swatchId: 'swatchSelectedRoute', key: 'selectedRoute' },
     { id: 'colorOtherPoint',    swatchId: 'swatchOtherPoint',    key: 'otherPoint'    },
     { id: 'colorOtherRoute',    swatchId: 'swatchOtherRoute',    key: 'otherRoute'    },
-].forEach(({ id, swatchId, key }) => {
+];
+
+const COLOR_DEFAULTS = {
+    selectedPoint: '#ff0000',
+    selectedRoute: '#ff8c00',
+    otherPoint:    '#f08080',
+    otherRoute:    '#d2b48c',
+};
+
+COLOR_FIELDS.forEach(({ id, swatchId, key }) => {
     document.getElementById(id).addEventListener('change', function () {
         const color = this.value.trim();
         if (!color) return;
         document.getElementById(swatchId).style.background = color;
         setMarkerColors({ [key]: color });
     });
+});
+
+// 設定を反映ボタン
+document.getElementById('colorApplyBtn').addEventListener('click', () => {
+    const config = {};
+    COLOR_FIELDS.forEach(({ id, swatchId, key }) => {
+        const color = document.getElementById(id).value.trim();
+        if (color) {
+            document.getElementById(swatchId).style.background = color;
+            config[key] = color;
+        }
+    });
+    setMarkerColors(config);
+});
+
+// デフォルト値に戻すボタン
+document.getElementById('colorResetBtn').addEventListener('click', () => {
+    COLOR_FIELDS.forEach(({ id, swatchId, key }) => {
+        const color = COLOR_DEFAULTS[key];
+        document.getElementById(id).value = color;
+        document.getElementById(swatchId).style.background = color;
+    });
+    setMarkerColors(COLOR_DEFAULTS);
 });
