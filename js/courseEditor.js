@@ -49,6 +49,24 @@ const COURSE_ROUTE_STYLE = {
     interactive: false
 };
 
+// 非選択コースのスタイル
+const COURSE_POINT_STYLE_OTHER = {
+    radius: 8,
+    fillColor: '#f08080',
+    color: '#ffffff',
+    weight: 1,
+    stroke: true,
+    opacity: 1,
+    fillOpacity: 0.9,
+    interactive: false
+};
+const COURSE_ROUTE_STYLE_OTHER = {
+    color: '#ffd700',
+    weight: 4,
+    opacity: 0.9,
+    interactive: false
+};
+
 // ========================================
 // 初期化
 // ========================================
@@ -309,32 +327,23 @@ function calcRouteLength(coords) {
     return len;
 }
 
-function renderCourseOverlay() {
-    if (!courseLayer) return;
-    courseLayer.clearLayers();
-    if (currentIndex < 0 || currentIndex >= courses.length) return;
-
-    const course = courses[currentIndex];
+function renderOneCourse(course, pointStyle, routeStyle) {
     const { points, segmentRoutes } = course;
 
-    // 赤マーカーを描画
     points.forEach(p => {
         const m = _markerStore && _markerStore.get(p.pointId);
         if (!m) return;
-        L.circleMarker(m.getLatLng(), COURSE_POINT_STYLE).addTo(courseLayer);
+        L.circleMarker(m.getLatLng(), pointStyle).addTo(courseLayer);
     });
 
-    // 連続するポイント間のルートをオレンジで描画
     for (let i = 1; i < points.length; i++) {
         const segIdx = i - 1;
 
-        // キャッシュ済みのルート座標があればそのまま使用（解除しない）
         if (segmentRoutes[segIdx]) {
-            L.polyline(segmentRoutes[segIdx], COURSE_ROUTE_STYLE).addTo(courseLayer);
+            L.polyline(segmentRoutes[segIdx], routeStyle).addTo(courseLayer);
             continue;
         }
 
-        // 未キャッシュの場合はルートストアから検索
         if (!_routeFeatureStore) break;
         const prevId = points[i - 1].pointId;
         const currId = points[i].pointId;
@@ -343,16 +352,14 @@ function renderCourseOverlay() {
             (r.startId === currId && r.endId === prevId)
         );
         if (candidates.length === 0) {
-            // ルートが未定義の場合は直線で結ぶ（キャッシュしない）
             const prevMarker = _markerStore && _markerStore.get(prevId);
             const currMarker = _markerStore && _markerStore.get(currId);
             if (prevMarker && currMarker) {
-                L.polyline([prevMarker.getLatLng(), currMarker.getLatLng()], COURSE_ROUTE_STYLE).addTo(courseLayer);
+                L.polyline([prevMarker.getLatLng(), currMarker.getLatLng()], routeStyle).addTo(courseLayer);
             }
             continue;
         }
 
-        // 複数候補がある場合は最短ルートを選択
         let best = candidates[0];
         if (candidates.length > 1) {
             let minLen = Infinity;
@@ -362,9 +369,26 @@ function renderCourseOverlay() {
             }
         }
 
-        // 見つかったルートをキャッシュに保存してから描画
         segmentRoutes[segIdx] = best.coords;
-        L.polyline(best.coords, COURSE_ROUTE_STYLE).addTo(courseLayer);
+        L.polyline(best.coords, routeStyle).addTo(courseLayer);
+    }
+}
+
+function renderCourseOverlay() {
+    if (!courseLayer) return;
+    courseLayer.clearLayers();
+    if (courses.length === 0) return;
+
+    // 非選択コースを先に描画（選択コースが上に重なるよう）
+    courses.forEach((course, i) => {
+        if (i !== currentIndex) {
+            renderOneCourse(course, COURSE_POINT_STYLE_OTHER, COURSE_ROUTE_STYLE_OTHER);
+        }
+    });
+
+    // 選択コースを後から描画
+    if (currentIndex >= 0 && currentIndex < courses.length) {
+        renderOneCourse(courses[currentIndex], COURSE_POINT_STYLE, COURSE_ROUTE_STYLE);
     }
 }
 
